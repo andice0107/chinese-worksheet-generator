@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>志清國小個學乙班國語生字習寫與語詞應用學習單生成器</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Noto Serif TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-border: #1e293b;
+    }
+    body {
+      font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+    }
+    .font-chinese {
+      font-family: 'DFKai-SB', 'BiauKai', 'Noto Serif TC', serif;
+    }
+
+    /* 田字格樣式 (含十字虛線) */
+    .tianzi-box {
+      position: relative;
+      background-color: #ffffff;
+      box-sizing: border-box;
+      border-right: 1.5px solid #0f172a;
+    }
+    /* 水平虛線 */
+    .tianzi-box::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      border-top: 1px dashed #94a3b8;
+      pointer-events: none;
+    }
+    /* 垂直虛線 */
+    .tianzi-box::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      border-left: 1px dashed #94a3b8;
+      pointer-events: none;
+    }
+
+    /* 注音習寫直格 */
+    .zhuyin-box {
+      position: relative;
+      background-color: #ffffff;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 注音符號直排顯示 */
+    .zhuyin-text-container {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.05;
+      font-family: 'DFKai-SB', 'BiauKai', 'Noto Serif TC', serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+      user-select: none;
+      padding: 0 4px;
+    }
+    .zhuyin-symbols {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .zhuyin-symbols span {
+      display: inline-block;
+      width: 13px;
+      text-align: center;
+      line-height: 1.1;
+    }
+    /* 聲調符號定位：二聲 ˊ, 三聲 ˇ, 四聲 ˋ 位於注音符號右側；輕聲 ˙ 位於正上方 */
+    .zhuyin-tone {
+      position: absolute;
+      right: -6px;
+      top: 40%;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .zhuyin-tone-light {
+      display: block;
+      font-size: 11px;
+      margin-bottom: -2px;
+      line-height: 0.8;
+      text-align: center;
+    }
+
+    /* A4 預覽畫布：極窄邊界設計，確保單頁收納所有題目 */
+    .worksheet-paper {
+      width: 210mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      padding: 6mm 7mm 5mm 7mm;
+      margin: 0 auto;
+      background: #ffffff;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    /* 列印專用配置：極限窄邊界 4~5mm，強制單頁完整呈現 */
+    @media print {
+      body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .worksheet-paper {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        padding: 4.5mm 5.5mm 4.5mm 5.5mm !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 4mm 5.5mm 4mm 5.5mm;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <header class="no-print sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3 shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          國
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-800 text-base sm:text-lg leading-tight">志清國小個學乙班國語生字習寫與語詞應用學習單生成器</h1>
+          <p class="text-xs text-slate-500">標準田字格十字虛線・注音右側調號・真直式注音括號留空・單頁 Word 匯出</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnQuickDemo" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md border border-slate-300 transition">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          還原範例
+        </button>
+        <button id="btnPrint" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-md transition shadow-xs">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          直接列印 / PDF
+        </button>
+        <button id="btnExportWord" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition shadow-sm">
+          <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+          匯出單頁可編輯 Word (.doc)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- 左側設定面板 -->
+    <aside class="no-print lg:col-span-5 space-y-4">
+      
+      <!-- 1. 習寫規格設定 -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+            <span class="w-2 h-4 bg-sky-600 rounded-full"></span>
+            第一大題：生字田字格規格
+          </h2>
+          <span class="text-xs text-sky-600 font-medium">指定習寫 1~3 次</span>
+        </div>
+
+        <!-- 習寫次數單選 -->
+        <div>
+          <label class="text-xs font-medium text-slate-700 block mb-1.5">習寫次數（除示範字列外額外練習列數）：</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label id="labelTimes1" class="cursor-pointer border rounded-lg p-2 flex items-center justify-center gap-1.5 text-xs font-medium transition border-slate-200 hover:border-slate-300">
+              <input type="radio" name="practiceTimes" value="1" class="sr-only">
+              <span class="w-3.5 h-3.5 rounded-full border border-slate-300 flex items-center justify-center">
+                <span class="dot w-2 h-2 rounded-full bg-slate-300"></span>
+              </span>
+              練習 1 次
+            </label>
+            <label id="labelTimes2" class="cursor-pointer border rounded-lg p-2 flex items-center justify-center gap-1.5 text-xs font-medium transition border-sky-600 bg-sky-50 text-sky-900">
+              <input type="radio" name="practiceTimes" value="2" class="sr-only" checked>
+              <span class="w-3.5 h-3.5 rounded-full border border-sky-600 flex items-center justify-center">
+                <span class="dot w-2 h-2 rounded-full bg-sky-600"></span>
+              </span>
+              練習 2 次 (照片)
+            </label>
+            <label id="labelTimes3" class="cursor-pointer border rounded-lg p-2 flex items-center justify-center gap-1.5 text-xs font-medium transition border-slate-200 hover:border-slate-300">
+              <input type="radio" name="practiceTimes" value="3" class="sr-only">
+              <span class="w-3.5 h-3.5 rounded-full border border-slate-300 flex items-center justify-center">
+                <span class="dot w-2 h-2 rounded-full bg-slate-300"></span>
+              </span>
+              練習 3 次
+            </label>
+          </div>
+        </div>
+
+        <!-- 每列生字數量選擇 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-slate-700 block mb-1">每列生字數：</label>
+            <select id="wordsPerRow" class="w-full border border-slate-300 rounded-md px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-sky-500 focus:outline-none">
+              <option value="7">7 字 / 列</option>
+              <option value="8" selected>8 字 / 列 (照片標準)</option>
+              <option value="9">9 字 / 列</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-700 block mb-1">快速清空生字：</label>
+            <button id="btnClearChars" type="button" class="w-full border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-md px-2.5 py-1.5 text-xs font-medium transition flex items-center justify-center gap-1">
+              <i data-lucide="trash" class="w-3 h-3"></i>
+              清空輸入
+            </button>
+          </div>
+        </div>
+
+        <!-- 生字輸入框 -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-medium text-slate-700 block">輸入生字與語詞（一行一組，可指定注音）：</label>
+            <span class="text-[10px] text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">支援「字 詞 注音」</span>
+          </div>
+          <textarea id="inputCharacters" rows="5" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-chinese leading-relaxed focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="格式範例（一行一組，後面皆可指定注音）：&#10;性 個性 ㄒㄧㄥˋ&#10;姓 姓名 ㄒㄧㄥˋ&#10;塗 塗料 ㄊㄨˊ&#10;寺 寺廟 ㄙˋ&#10;詩 小詩 ㄕ&#10;卷 考卷 ㄐㄩㄢˋ&#10;卷 考卷 ㄐㄩㄢˇ&#10;卷 考卷 ㄑㄩㄢˊ&#10;若沒寫注音或語詞，系統會自動從字典帶入"></textarea>
+          <p class="text-[11px] text-slate-400 mt-1">格式支援「字 詞 注音」或「字：詞 注音」。每行後方加上注音即可指定學習單中呈現的字音（特別適用於多音字指定）。</p>
+        </div>
+
+        <!-- 可摺疊：個別生字詞語與注音細項調整 -->
+        <div class="border-t border-slate-100 pt-2">
+          <button id="toggleCharDetails" type="button" class="w-full flex items-center justify-between text-xs font-medium text-slate-600 hover:text-slate-900 py-1">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="settings-2" class="w-3.5 h-3.5 text-slate-400"></i>
+              個別字音詞與多音字調整（可點選常用破音或手動修改）
+            </span>
+            <div class="flex items-center gap-1">
+              <span id="charCountBadge" class="px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[10px]">16</span>
+              <i id="arrowCharDetails" data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+            </div>
+          </button>
+          <div id="charDetailsContent" class="hidden mt-2 max-h-64 overflow-y-auto space-y-2 pr-1">
+            <div id="charDetailList" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+            <span class="w-2 h-4 bg-amber-500 rounded-full"></span>
+            第二大題：短文／長句填空題
+          </h2>
+          <div class="flex items-center gap-1">
+            <button id="btnAutoGenerateSentences" type="button" class="text-xs bg-amber-500 hover:bg-amber-600 text-white font-medium px-2.5 py-1 rounded transition flex items-center gap-1 shadow-2xs">
+              <i data-lucide="sparkles" class="w-3 h-3"></i>
+              一鍵自動生成全部題目
+            </button>
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-500 bg-amber-50/70 border border-amber-200/60 rounded-lg p-2 leading-relaxed">
+          💡 <strong>直式注音線索保證</strong>：若勾選注音線索，系統無論在網頁預覽、直接列印或匯出 Word，均保證呈現<strong>標準直式注音</strong>（聲母在上、介母在中、韻母在下、聲調在右），徹底告別橫向混亂排版！
+        </div>
+
+        <!-- 題目列表動態容器 -->
+        <div id="questionsContainer" class="space-y-3"></div>
+
+        <button id="btnAddQuestion" type="button" class="w-full py-2 border border-dashed border-sky-400 text-sky-600 hover:bg-sky-50 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          新增一道填空長句題目
+        </button>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+        <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-100">
+          <span class="w-2 h-4 bg-emerald-500 rounded-full"></span>
+          學習單標題文字
+        </h2>
+        <div class="grid grid-cols-1 gap-2.5 text-xs">
+          <div>
+            <label class="text-slate-600 block mb-0.5">主標題：</label>
+            <input id="wsMainTitle" type="text" class="w-full border border-slate-300 rounded px-2 py-1 font-chinese" value="＿＿國小個學乙班國語生字習寫與語詞應用學習單">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-slate-600 block mb-0.5">第一大題標題：</label>
+              <input id="wsSection1Title" type="text" class="w-full border border-slate-300 rounded px-2 py-1 font-chinese" value="寫出生字和注音。">
+            </div>
+            <div>
+              <label class="text-slate-600 block mb-0.5">第二大題標題：</label>
+              <input id="wsSection2Title" type="text" class="w-full border border-slate-300 rounded px-2 py-1 font-chinese" value="填入國字：">
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="lg:col-span-7 flex flex-col items-center justify-start">
+      <div class="no-print mb-2 text-xs text-slate-500 flex items-center gap-1.5 self-start">
+        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+        A4 即時預覽畫面（直接列印或匯出 Word 完全一致）
+      </div>
+
+      <!-- A4 紙張實體 -->
+      <div id="worksheetPage" class="worksheet-paper flex flex-col justify-start">
+        
+        <!-- 頁首：主標題佔 2/3，姓名書寫底線靠右 -->
+        <div class="w-full pb-2 mb-2.5 border-b-2 border-slate-900 flex items-end justify-between gap-4">
+          <div class="w-2/3">
+            <h1 id="displayHeaderTitle" class="font-chinese font-bold text-lg sm:text-xl text-slate-900 tracking-wider break-words leading-tight">
+              ＿＿國小個學乙班國語生字習寫與語詞應用學習單
+            </h1>
+          </div>
+          <div class="flex-1 flex justify-end items-end pb-0.5">
+            <div class="text-sm sm:text-base font-chinese text-slate-900 tracking-wider whitespace-nowrap">
+              姓名：<span class="inline-block border-b-2 border-slate-900 w-28 sm:w-36"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第一大題：生字習寫 (田字格 + 注音格) -->
+        <div class="mb-2.5">
+          <div class="flex items-center gap-1.5 mb-1">
+            <h2 id="displaySec1Title" class="font-chinese font-bold text-sm sm:text-base text-slate-900 tracking-wide">
+              寫出生字和注音。
+            </h2>
+          </div>
+
+          <!-- 生字表格區域 (動態生成) -->
+          <div id="hanziGridArea" class="w-full"></div>
+        </div>
+
+        <!-- 第二大題：短文填空 (標準直式注音括號留空) -->
+        <div class="flex-1 overflow-hidden flex flex-col justify-start">
+          <div class="flex items-center gap-1.5 mb-1">
+            <h2 id="displaySec2Title" class="font-chinese font-bold text-sm sm:text-base text-slate-900 tracking-wide">
+              填入國字：
+            </h2>
+          </div>
+
+          <!-- 題目列表區域 (動態生成，採緊湊自適應行高與間距) -->
+          <div id="sentencesDisplayArea" class="space-y-1.5 pt-0.5"></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- 吐司通知元件 -->
+  <div id="toastMessage" class="no-print fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none flex items-center gap-2 z-50">
+    <i data-lucide="info" class="w-4 h-4 text-sky-400"></i>
+    <span id="toastText">訊息提示</span>
+  </div>
+
+  <script>
+    // 內建常用漢字注音與高頻生活詞庫
+    const COMMON_DICT = {
+      '性': { pinyin: 'ㄒㄧㄥˋ', word: '個性' },
+      '姓': { pinyin: 'ㄒㄧㄥˋ', word: '姓名' },
+      '塗': { pinyin: 'ㄊㄨˊ', word: '塗料' },
+      '寺': { pinyin: 'ㄙˋ', word: '寺廟' },
+      '詩': { pinyin: 'ㄕ', word: '小詩' },
+      '秀': { pinyin: 'ㄒㄧㄡˋ', word: '秀麗' },
+      '橡': { pinyin: 'ㄒㄧㄤˋ', word: '橡樹' },
+      '像': { pinyin: 'ㄒㄧㄤˋ', word: '好像' },
+      '券': { pinyin: 'ㄑㄩㄢˋ', word: '入場券' },
+      '卷': { pinyin: 'ㄐㄩㄢˋ', word: '考卷' },
+      '楚': { pinyin: 'ㄔㄨˇ', word: '清楚' },
+      '焚': { pinyin: 'ㄈㄣˊ', word: '焚燒' },
+      '禁': { pinyin: 'ㄐㄧㄣˋ', word: '禁止' },
+      '淋': { pinyin: 'ㄌㄧㄣˊ', word: '淋雨' },
+      '粥': { pinyin: 'ㄓㄡ', word: '稀粥' },
+      '縷': { pinyin: 'ㄌㄩˇ', word: '千絲萬縷' },
+      '碗': { pinyin: 'ㄨㄢˇ', word: '飯碗' },
+      '網': { pinyin: 'ㄨㄤˇ', word: '漁網' },
+      '綢': { pinyin: 'ㄔㄡˊ', word: '絲綢' },
+      '繆': { pinyin: 'ㄇㄡˊ', word: '未雨綢繆' },
+      '毋': { pinyin: 'ㄨˊ', word: '毋庸' },
+      '掘': { pinyin: 'ㄐㄩㄝˊ', word: '挖掘' },
+      '纏': { pinyin: 'ㄔㄢˊ', word: '糾纏' },
+      '縫': { pinyin: 'ㄈㄥˊ', word: '縫補' },
+      '縛': { pinyin: 'ㄈㄨˊ', word: '束縛' },
+      '瓦': { pinyin: 'ㄨㄚˇ', word: '瓦片' },
+      '缶': { pinyin: 'ㄈㄡˇ', word: '陶缶' },
+      '蔬': { pinyin: 'ㄕㄨ', word: '蔬菜' },
+      '饈': { pinyin: 'ㄒㄧㄡ', word: '珍饈' },
+      '糙': { pinyin: 'ㄘㄠ', word: '粗糙' },
+      '腹': { pinyin: 'ㄈㄨˋ', word: '腹部' },
+      '陶': { pinyin: 'ㄊㄠˊ', word: '陶器' },
+      '施': { pinyin: 'ㄕ', word: '施行' },
+      '惠': { pinyin: 'ㄏㄨㄟˋ', word: '恩惠' },
+      '勿': { pinyin: 'ㄨˋ', word: '切勿' },
+      '預': { pinyin: 'ㄩˋ', word: '預習' },
+      '悲': { pinyin: 'ㄅㄟ', word: '悲傷' },
+      '春': { pinyin: 'ㄔㄨㄣ', word: '春天' },
+      '夏': { pinyin: 'ㄒㄧㄚˋ', word: '夏天' },
+      '秋': { pinyin: 'ㄑㄧㄡ', word: '秋天' },
+      '冬': { pinyin: 'ㄉㄨㄥ', word: '冬天' },
+      '風': { pinyin: 'ㄈㄥ', word: '微風' },
+      '雨': { pinyin: 'ㄩˇ', word: '細雨' },
+      '花': { pinyin: 'ㄏㄨㄚ', word: '花朵' },
+      '草': { pinyin: 'ㄘㄠˇ', word: '青草' },
+      '樹': { pinyin: 'ㄕㄨˋ', word: '大樹' },
+      '鳥': { pinyin: 'ㄋㄧㄠˇ', word: '小鳥' },
+      '魚': { pinyin: 'ㄩˊ', word: '游魚' },
+      '山': { pinyin: 'ㄕㄢ', word: '高山' },
+      '水': { pinyin: 'ㄕㄨㄟˇ', word: '流水' },
+      '學': { pinyin: 'ㄒㄩㄝˊ', word: '學習' },
+      '校': { pinyin: 'ㄒㄧㄠˋ', word: '校園' },
+      '友': { pinyin: 'ㄧㄡˇ', word: '朋友' },
+      '愛': { pinyin: 'ㄞˋ', word: '愛心' },
+      '書': { pinyin: 'ㄕㄨ', word: '圖書' },
+      '寫': { pinyin: 'ㄒㄧㄝˇ', word: '書寫' },
+      '讀': { pinyin: 'ㄉㄨˊ', word: '閱讀' },
+      '樂': { pinyin: 'ㄌㄜˋ', word: '快樂' }
+    };
+
+    // 常見多音字讀音庫
+    const POLYPHONE_DICT = {
+      '卷': ['ㄐㄩㄢˋ', 'ㄐㄩㄢˇ', 'ㄑㄩㄢˊ'],
+      '禁': ['ㄐㄧㄣˋ', 'ㄐㄧㄣ'],
+      '淋': ['ㄌㄧㄣˊ', 'ㄌㄧㄣˋ'],
+      '行': ['ㄒㄧㄥˊ', 'ㄏㄤˊ'],
+      '樂': ['ㄌㄜˋ', 'ㄩㄝˋ', 'ㄧㄠˋ'],
+      '得': ['ㄉㄜˊ', 'ㄉㄜ˙', 'ㄉㄟˇ'],
+      '地': ['ㄉㄧˋ', 'ㄉㄜ˙'],
+      '重': ['ㄓㄨㄥˋ', 'ㄔㄨㄥˊ'],
+      '著': ['ㄓㄜ˙', 'ㄓㄨˋ', 'ㄓㄠˊ', 'ㄓㄠ'],
+      '長': ['ㄔㄤˊ', 'ㄓㄤˇ'],
+      '假': ['ㄐㄧㄚˇ', 'ㄐㄧㄚˋ'],
+      '轉': ['ㄓㄨㄢˇ', 'ㄓㄨㄢˋ'],
+      '為': ['ㄨㄟˊ', 'ㄨㄟˋ'],
+      '種': ['ㄓㄨㄥˇ', 'ㄓㄨㄥˋ'],
+      '便': ['ㄅㄧㄢˋ', 'ㄆㄧㄢˊ'],
+      '調': ['ㄉㄧㄠˋ', 'ㄊㄧㄠˊ'],
+      '量': ['ㄌㄧㄤˊ', 'ㄌㄧㄤˋ'],
+      '數': ['ㄕㄨˋ', 'ㄕㄨˇ', 'ㄕㄨㄛˋ'],
+      '差': ['ㄔㄚ', 'ㄔㄚˋ', 'ㄔㄞ', 'ㄘ'],
+      '好': ['ㄏㄠˇ', 'ㄏㄠˋ'],
+      '少': ['ㄕㄠˇ', 'ㄕㄠˋ'],
+      '教': ['ㄐㄧㄠ', 'ㄐㄧㄠˋ'],
+      '背': ['ㄅㄟ', 'ㄅㄟˋ'],
+      '空': ['ㄎㄨㄥ', 'ㄎㄨㄥˋ'],
+      '應': ['ㄧㄥ', 'ㄧㄥˋ'],
+      '間': ['ㄐㄧㄢ', 'ㄐㄧㄢˋ'],
+      '落': ['ㄌㄨㄛˋ', 'ㄌㄚˋ', 'ㄌㄠˋ'],
+      '分': ['ㄈㄣ', 'ㄈㄣˋ']
+    };
+
+    // 照片預設的三道短文／長句題目
+    const DEFAULT_QUESTIONS = [
+      {
+        id: 'q_1',
+        chars: ['姓', '性', '塗', '寺', '詩'],
+        zhuyinHints: [],
+        customWords: {},
+        targetLength: 70,
+        text: '我的（　　）名是小安，個（　　）活潑又喜歡幫助別人。今天第一節是美術課，老師請我們把顏料（　　）在紙上。我畫了一座漂亮的（　　）廟，還寫了一首小（　　）。'
+      },
+      {
+        id: 'q_2',
+        chars: ['橡', '像'],
+        zhuyinHints: [],
+        customWords: {},
+        targetLength: 55,
+        text: '星期天，爸爸帶我去動物園。我看到一棵高大的（　　）樹，樹上有好多葉子。我拿起相機拍照，照片中的大樹看起來好（　　）真的一樣。'
+      },
+      {
+        id: 'q_3',
+        chars: ['卷', '券'],
+        zhuyinHints: [],
+        customWords: {},
+        targetLength: 35,
+        text: '他答應班上的學生，可以拿訂正完的考（　　），來兌換電影（　　）。'
+      }
+    ];
+
+    // 全域應用狀態
+    const state = {
+      practiceTimes: 2,
+      wordsPerRow: 8,
+      charList: [],
+      questions: [],
+      mainTitle: '＿＿國小個學乙班國語生字習寫與語詞應用學習單',
+      sec1Title: '寫出生字和注音。',
+      sec2Title: '填入國字：'
+    };
+
+    // 同步剔除所有題目中已不存在於生字清單的無效字
+    function syncQuestionsWithCharList() {
+      const validChars = new Set(state.charList.map(c => c.char));
+      state.questions.forEach(q => {
+        if (!Array.isArray(q.zhuyinHints)) q.zhuyinHints = [];
+        if (Array.isArray(q.chars)) {
+          q.chars = q.chars.filter(c => validChars.has(c));
+          q.zhuyinHints = q.zhuyinHints.filter(c => validChars.has(c));
+        } else {
+          q.chars = [];
+          q.zhuyinHints = [];
+        }
+      });
+    }
+
+    function getCharCurrentPinyin(ch) {
+      const found = state.charList.find(item => item.char === ch);
+      if (found && found.pinyin && found.pinyin.trim()) {
+        return found.pinyin.trim();
+      }
+      return COMMON_DICT[ch]?.pinyin || '';
+    }
+
+    function getCharInfo(ch) {
+      const dict = COMMON_DICT[ch] || {};
+      return {
+        char: ch,
+        pinyin: dict.pinyin || '',
+        word: dict.word || (ch + '語')
+      };
+    }
+
+    // 解析注音字串（分離注音符號本體、輕聲與二三四聲調）
+    function parseZhuyinString(raw) {
+      if (!raw) return { symbols: [], tone: '', isLight: false };
+      const clean = String(raw).trim();
+      let isLight = false;
+      let tone = '';
+      const symbols = [];
+
+      for (const char of clean) {
+        if (char === '˙' || char === '‧') {
+          isLight = true;
+        } else if (char === 'ˊ' || char === 'ˇ' || char === 'ˋ') {
+          tone = char;
+        } else if (/[ㄅ-ㄩ\u3105-\u3129]/.test(char)) {
+          symbols.push(char);
+        } else if (char.trim()) {
+          symbols.push(char);
+        }
+      }
+
+      return { symbols, tone, isLight };
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastMessage');
+      const toastText = document.getElementById('toastText');
+      if (!toast || !toastText) return;
+      toastText.textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+
+    function parseBatchInput(rawText) {
+      if (!rawText || !rawText.trim()) return [];
+
+      const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+      const result = [];
+
+      if (lines.length === 1 && !lines[0].includes('：') && !lines[0].includes(':')) {
+        const tokens = lines[0].split(/\s+/).filter(Boolean);
+        const allSingleChars = tokens.every(t => t.length === 1 && /[\u4e00-\u9fa5]/.test(t));
+        if (allSingleChars && tokens.length > 1) {
+          return tokens.map(c => getCharInfo(c));
+        }
+        if (tokens.length === 1 && tokens[0].length > 2 && /^[\u4e00-\u9fa5]+$/.test(tokens[0])) {
+          return tokens[0].split('').map(c => getCharInfo(c));
+        }
+      }
+
+      lines.forEach(line => {
+        let currentLine = line;
+        let pinyin = '';
+
+        const zhuyinMatch = currentLine.match(/[ㄅ-ㄩ\u3105-\u3129ˊˇˋ˙]+/);
+        if (zhuyinMatch) {
+          pinyin = zhuyinMatch[0];
+          currentLine = currentLine.replace(zhuyinMatch[0], ' ');
+        }
+
+        currentLine = currentLine.replace(/[：:（）()]/g, ' ').trim();
+        const parts = currentLine.split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return;
+
+        let char = '';
+        let word = '';
+
+        if (parts.length === 1) {
+          const token = parts[0];
+          const firstCharMatch = token.match(/[\u4e00-\u9fa5]/);
+          if (firstCharMatch) {
+            char = firstCharMatch[0];
+            if (token.length > 1) word = token;
+          }
+        } else {
+          const firstCharMatch = parts[0].match(/[\u4e00-\u9fa5]/);
+          if (firstCharMatch) char = firstCharMatch[0];
+          word = parts.slice(1).join('').trim();
+        }
+
+        if (char) {
+          const defaultInfo = getCharInfo(char);
+          result.push({
+            char: char,
+            pinyin: pinyin || defaultInfo.pinyin,
+            word: word || defaultInfo.word
+          });
+        }
+      });
+      return result;
+    }
+
+    // 第一大題生字田字格右側的直式注音表格
+    function buildWordZhuyinHtml(pinyin, isSmall = false) {
+      if (!pinyin || !pinyin.trim()) return '&nbsp;';
+      const parsed = parseZhuyinString(pinyin);
+      const fontSize = isSmall ? '8pt' : '9.5pt';
+      const toneSize = isSmall ? '7.5pt' : '9pt';
+      const lightSize = isSmall ? '8pt' : '10pt';
+
+      return `
+        <table cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin:auto; border:none; mso-padding-alt:0pt 0pt 0pt 0pt;">
+          ${parsed.isLight ? `
+          <tr>
+            <td colspan="2" style="border:none; padding:0; text-align:center; font-family:'標楷體','BiauKai',serif; font-size:${lightSize}; line-height:0.8; font-weight:bold;">˙</td>
+          </tr>` : ''}
+          <tr>
+            <td style="border:none; padding:0; text-align:center; font-family:'標楷體','BiauKai',serif; font-size:${fontSize}; line-height:1.15; font-weight:bold; vertical-align:middle;">
+              ${parsed.symbols.join('<br>')}
+            </td>
+            <td style="border:none; padding:0 0 0 1.5pt; text-align:left; vertical-align:middle; font-family:'標楷體','BiauKai',serif; font-size:${toneSize}; line-height:1; font-weight:bold;">
+              ${(!parsed.isLight && parsed.tone) ? parsed.tone : '&nbsp;'}
+            </td>
+          </tr>
+        </table>
+      `;
+    }
+
+    // 動態繪製超高解析度（4x Retina 抗鋸齒）的標準直式注音括號留空圖像（相容所有版本 Word）
+    const zhuyinCanvasCache = {};
+    function getZhuyinBlankImageDataUrl(pinyin) {
+      const cleanPy = (pinyin || '').trim();
+      const cacheKey = cleanPy;
+      if (zhuyinCanvasCache[cacheKey]) {
+        return zhuyinCanvasCache[cacheKey];
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      const parsed = parseZhuyinString(cleanPy);
+      const hasZhuyin = parsed.symbols.length > 0;
+
+      // 邏輯尺寸
+      const logicalWidth = hasZhuyin ? 66 : 48;
+      const logicalHeight = 28;
+      const scale = 4; // 4x 超高解析度保證列印清晰銳利
+
+      canvas.width = logicalWidth * scale;
+      canvas.height = logicalHeight * scale;
+      ctx.scale(scale, scale);
+
+      ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#000000';
+
+      // 繪製左括號 （
+      ctx.font = 'bold 15px "標楷體", "BiauKai", "DFKai-SB", "Noto Serif TC", serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('（', 1, 14);
+
+      if (hasZhuyin) {
+        // 繪製直式注音（位於括號內右側，左側保留 26px 供學生書寫國字）
+        const zhuyinCenterX = 45;
+        const n = parsed.symbols.length;
+
+        // 計算各符號之 Y 座標
+        let symbolYList = [];
+        if (n === 1) {
+          symbolYList = [14];
+        } else if (n === 2) {
+          symbolYList = [9, 19];
+        } else if (n >= 3) {
+          symbolYList = [6.5, 14, 21.5];
+        }
+
+        ctx.font = 'bold 10px "標楷體", "BiauKai", "DFKai-SB", "Noto Serif TC", serif';
+        ctx.textAlign = 'center';
+
+        // 輕聲 ˙ 標於正上方
+        if (parsed.isLight) {
+          ctx.font = 'bold 9px "標楷體", "BiauKai", "DFKai-SB", serif';
+          ctx.fillText('˙', zhuyinCenterX, symbolYList[0] - 6);
+          ctx.font = 'bold 10px "標楷體", "BiauKai", "DFKai-SB", serif';
+        }
+
+        // 繪製本體符號（聲母、介母、韻母直排）
+        parsed.symbols.forEach((sym, idx) => {
+          if (idx < symbolYList.length) {
+            ctx.fillText(sym, zhuyinCenterX, symbolYList[idx]);
+          }
+        });
+
+        // 二聲 ˊ, 三聲 ˇ, 四聲 ˋ 定位於整組注音或最後一符號之右側
+        if (!parsed.isLight && parsed.tone) {
+          ctx.font = 'bold 9.5px "標楷體", "BiauKai", "DFKai-SB", serif';
+          ctx.textAlign = 'left';
+          const toneY = (n >= 2) ? (symbolYList[symbolYList.length - 1] - 1) : 14;
+          ctx.fillText(parsed.tone, zhuyinCenterX + 5.5, toneY);
+        }
+      }
+
+      // 繪製右括號 ）
+      ctx.font = 'bold 15px "標楷體", "BiauKai", "DFKai-SB", "Noto Serif TC", serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('）', logicalWidth - 1, 14);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      zhuyinCanvasCache[cacheKey] = {
+        dataUrl,
+        width: logicalWidth,
+        height: logicalHeight
+      };
+      return zhuyinCanvasCache[cacheKey];
+    }
+
+    // 格式化 Word 內文：將短文留空格與注音線索轉為 100% 絕對直式注音的行內圖片
+    function formatSentenceForWord(text) {
+      if (!text) return '';
+
+      // 1. 匹配帶有注音線索的留空格：如（　　[ㄨㄢˇ]）或（   [ㄓㄡ] ）
+      let formatted = text.replace(/（[\s　]*\[?([ㄅ-ㄩ\u3105-\u3129ˊˇˋ˙\s]+)\]?[\s　]*）|\([\s　]*\[?([ㄅ-ㄩ\u3105-\u3129ˊˇˋ˙\s]+)\]?[\s　]*\)/g, (match, py1, py2) => {
+        const rawPy = (py1 || py2 || '').trim();
+        if (!rawPy) {
+          return '（<span style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>）';
+        }
+        
+        const imgObj = getZhuyinBlankImageDataUrl(rawPy);
+        const widthPt = (imgObj.width * 0.75).toFixed(1);
+        const heightPt = (imgObj.height * 0.75).toFixed(1);
+        
+        // 微軟 Word 行內圖片規範：絕不斷行、100% 直式注音
+        return `<img src="${imgObj.dataUrl}" width="${imgObj.width}" height="${imgObj.height}" style="width:${widthPt}pt; height:${heightPt}pt; vertical-align:-4.5pt; border:none; mso-line-break-rule:exactly; display:inline;" alt="（　${rawPy}）">`;
+      });
+
+      // 2. 匹配純留空格
+      formatted = formatted.replace(/（\s*）|\(\s*\)|（　*）/g, '（<span style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>）');
+      return formatted;
+    }
+
+    // 將當前題目的注音線索精確套用到題目內文
+    function applyZhuyinHintsToQuestionText(question) {
+      if (!question || !question.text) return;
+      let txt = question.text;
+      const hints = Array.isArray(question.zhuyinHints) ? question.zhuyinHints : [];
+      const selectedChars = Array.isArray(question.chars) ? question.chars : [];
+
+      // 1. 如果文字中含有原始國字，直接依勾選狀態轉為括號與注音
+      selectedChars.forEach(c => {
+        if (c && txt.includes(c)) {
+          const isHint = hints.includes(c);
+          const pinyin = getCharCurrentPinyin(c);
+          const token = (isHint && pinyin) ? `（　　[${pinyin}]）` : '（　　）';
+          txt = txt.split(c).join(token);
+        }
+      });
+
+      // 2. 針對已經挖空的括號，以關聯詞精確補齊注音
+      selectedChars.forEach(c => {
+        const pinyin = getCharCurrentPinyin(c);
+        if (!pinyin) return;
+        const isHint = hints.includes(c);
+        
+        const word = (state.charList.find(i => i.char === c)?.word || COMMON_DICT[c]?.word || '').trim();
+        if (word && word.includes(c)) {
+          const parts = word.split(c);
+          const prefix = parts[0];
+          const suffix = parts[1];
+          if (prefix || suffix) {
+            const re = new RegExp((prefix ? escapeRegExp(prefix) : '') + '（[\\s　]*(\\[[^\\]]*\\])?[\\s　]*）' + (suffix ? escapeRegExp(suffix) : ''), 'g');
+            txt = txt.replace(re, () => {
+              return (prefix || '') + (isHint ? `（　　[${pinyin}]）` : '（　　）') + (suffix || '');
+            });
+          }
+        }
+      });
+
+      // 3. 保障：若題目中仍有未帶注音的留空格，依照勾選清單逐一依序填入注音
+      if (hints.length > 0) {
+        hints.forEach(c => {
+          const pinyin = getCharCurrentPinyin(c);
+          if (pinyin && !txt.includes(`[${pinyin}]`)) {
+            txt = txt.replace(/（[\s　]*）|\([\s　]*\)/, `（　　[${pinyin}]）`);
+          }
+        });
+      }
+
+      question.text = txt;
+    }
+
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function exportToWordDocument() {
+      showToast('正在準備單頁標準直式注音 Word 檔...');
+
+      const cols = parseInt(state.wordsPerRow, 10) || 8;
+      const practiceTimes = parseInt(state.practiceTimes, 10);
+      
+      const totalTableWidthPt = 512;
+      const groupWidthPt = (totalTableWidthPt / cols);
+      const tianziWidthPt = (groupWidthPt * 0.73).toFixed(1);
+      const zhuyinWidthPt = (groupWidthPt - parseFloat(tianziWidthPt)).toFixed(1);
+      const rowHeightPt = parseFloat(tianziWidthPt);
+      const halfTianzi = (rowHeightPt / 2).toFixed(1);
+
+      let colgroupHtml = '<colgroup>';
+      for (let c = 0; c < cols; c++) {
+        colgroupHtml += `<col width="${tianziWidthPt}">`;
+        colgroupHtml += `<col width="${zhuyinWidthPt}">`;
+      }
+      colgroupHtml += '</colgroup>';
+
+      let wordGridHtml = '';
+      const rows = [];
+      for (let i = 0; i < state.charList.length; i += cols) {
+        rows.push(state.charList.slice(i, i + cols));
+      }
+
+      rows.forEach(rowWords => {
+        const padded = [...rowWords];
+        while (padded.length < cols) padded.push({ char: '', pinyin: '' });
+
+        let headerRowCells = '';
+        padded.forEach(item => {
+          if (!item.char) {
+            headerRowCells += `
+              <td style="width:${tianziWidthPt}pt; max-width:${tianziWidthPt}pt; height:${rowHeightPt}pt; border:1.5pt solid #000000; padding:0; vertical-align:middle; mso-height-rule:exactly;">&nbsp;</td>
+              <td style="width:${zhuyinWidthPt}pt; max-width:${zhuyinWidthPt}pt; height:${rowHeightPt}pt; border:1.5pt solid #000000; padding:0; vertical-align:middle; mso-height-rule:exactly;">&nbsp;</td>
+            `;
+          } else {
+            let safePinyin = item.pinyin || '';
+            if (!safePinyin || /[\u4e00-\u9fa5]/.test(safePinyin)) {
+              safePinyin = COMMON_DICT[item.char]?.pinyin || '';
+            }
+            const zhuyinContent = buildWordZhuyinHtml(safePinyin);
+            headerRowCells += `
+              <td style="width:${tianziWidthPt}pt; max-width:${tianziWidthPt}pt; height:${rowHeightPt}pt; border:1.5pt solid #000000; text-align:center; vertical-align:middle; font-family:'標楷體', 'BiauKai', 'DFKai-SB', serif; font-size:24pt; font-weight:bold; padding:0; mso-height-rule:exactly;">
+                ${item.char}
+              </td>
+              <td style="width:${zhuyinWidthPt}pt; max-width:${zhuyinWidthPt}pt; height:${rowHeightPt}pt; border:1.5pt solid #000000; text-align:center; vertical-align:middle; padding:0; mso-height-rule:exactly;">
+                ${zhuyinContent}
+              </td>
+            `;
+          }
+        });
+
+        let practiceRowsHtml = '';
+        for (let t = 0; t < practiceTimes; t++) {
+          let pCells = '';
+          padded.forEach(() => {
+            pCells += `
+              <td style="width:${tianziWidthPt}pt; max-width:${tianziWidthPt}pt; height:${rowHeightPt}pt; border:1.5pt solid #000000; padding:0; vertical-align:middle; mso-height-rule:exactly;">
+                <table cellpadding="0" cellspacing="0" style="width:100%; height:100%; border-collapse:collapse; margin:0; padding:0; table-layout:fixed; mso-padding-alt:0pt 0pt 0pt 0pt;">
+                  <colgroup>
+                    <col width="${halfTianzi}">
+                    <col width="${halfTianzi}">
+                  </colgroup>
+                  <tr style="height:${halfTianzi}pt; mso-height-rule:exactly;">
+                    <td style="width:${halfTianzi}pt; height:${halfTianzi}pt; border:none; border-right:0.75pt dashed #5b8ec8; border-bottom:0.75pt dashed #5b8ec8; padding:0; font-size:1pt; line-height:1pt;">&nbsp;</td>
+                    <td style="width:${halfTianzi}pt; height:${halfTianzi}pt; border:none; border-bottom:0.75pt dashed #5b8ec8; padding:0; font-size:1pt; line-height:1pt;">&nbsp;</td>
+                  </tr>
+                  <tr style="height:${halfTianzi}pt; mso-height-rule:exactly;">
+                    <td style="width:${halfTianzi}pt; height:${halfTianzi}pt; border:none; border-right:0.75pt dashed #5b8ec8; padding:0; font-size:1pt; line-height:1pt;">&nbsp;</td>
+                    <td style="width:${halfTianzi}pt; height:${halfTianzi}pt; border:none; padding:0; font-size:1pt; line-height:1pt;">&nbsp;</td>
+                  </tr>
+                </table>
+              </td>
+              <td style="width:${zhuyinWidthPt}pt; max-width:${zhuyinWidthPt}pt; height:${rowHeightPt}pt; border:1.5pt solid #000000; padding:0; vertical-align:middle; mso-height-rule:exactly;">&nbsp;</td>
+            `;
+          });
+          practiceRowsHtml += `<tr style="height:${rowHeightPt}pt; mso-height-rule:exactly;">${pCells}</tr>`;
+        }
+
+        wordGridHtml += `
+          <table cellpadding="0" cellspacing="0" style="width:${totalTableWidthPt}pt; border-collapse:collapse; margin-bottom:5pt; table-layout:fixed; mso-table-lspace:0pt; mso-table-rspace:0pt; mso-padding-alt:0pt 0pt 0pt 0pt;">
+            ${colgroupHtml}
+            <tr style="height:${rowHeightPt}pt; mso-height-rule:exactly;">${headerRowCells}</tr>
+            ${practiceRowsHtml}
+          </table>
+        `;
+      });
+
+      // 填空題排版（純段落排版，杜絕 Word 段落斷行）
+      let wordSentencesHtml = '';
+      state.questions.forEach((q, idx) => {
+        const formattedTxt = formatSentenceForWord(q.text || '');
+        wordSentencesHtml += `
+          <p style="font-family:'標楷體', 'BiauKai', serif; font-size:13pt; line-height:1.55; margin-top:0pt; margin-bottom:5pt; text-align:justify; text-justify:inter-ideograph; width:${totalTableWidthPt}pt; max-width:${totalTableWidthPt}pt; mso-pagination:widow-orphan;">
+            <strong>${idx + 1}. </strong>${formattedTxt}
+          </p>
+        `;
+      });
+
+      const fullWordDocument = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset="utf-8">
+          <title>${state.mainTitle}</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page {
+              size: 210mm 297mm;
+              margin: 12pt 12pt 12pt 16pt;
+              mso-header-margin: 0pt;
+              mso-footer-margin: 0pt;
+              mso-page-orientation: portrait;
+            }
+            body {
+              font-family: '標楷體', 'BiauKai', 'DFKai-SB', serif;
+              color: #000000;
+              margin: 0;
+              padding: 0;
+            }
+            p {
+              margin: 0;
+              padding: 0;
+            }
+          </style>
+        </head>
+        <body>
+          <table cellpadding="0" cellspacing="0" style="width:${totalTableWidthPt}pt; border-collapse:collapse; margin-bottom:4pt; border-bottom:1.5pt solid #000000; padding-bottom:2pt; mso-padding-alt:0pt 0pt 0pt 0pt;">
+            <tr>
+              <td style="width:68%; font-size:14pt; font-weight:bold; font-family:'標楷體', 'BiauKai', serif; vertical-align:bottom; padding-bottom:2pt;">
+                ${state.mainTitle}
+              </td>
+              <td style="width:32%; text-align:right; font-size:12pt; font-family:'標楷體', 'BiauKai', serif; vertical-align:bottom; white-space:nowrap; padding-bottom:2pt;">
+                姓名：<span style="display:inline-block; border-bottom:1.5pt solid #000000; width:100pt;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+              </td>
+            </tr>
+          </table>
+
+          <p style="font-size:12pt; font-weight:bold; margin-top:4pt; margin-bottom:3pt; width:${totalTableWidthPt}pt;">
+            ${state.sec1Title}
+          </p>
+          ${wordGridHtml}
+
+          <p style="font-size:12pt; font-weight:bold; margin-top:5pt; margin-bottom:3pt; width:${totalTableWidthPt}pt;">
+            ${state.sec2Title}
+          </p>
+          ${wordSentencesHtml}
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', fullWordDocument], {
+        type: 'application/msword;charset=utf-8'
+      });
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `${state.mainTitle}.doc`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(url);
+
+      showToast('已成功下載標準單頁 Word 檔！');
+    }
+
+    function updateCharDetailsUI() {
+      const container = document.getElementById('charDetailList');
+      const countBadge = document.getElementById('charCountBadge');
+      if (countBadge) countBadge.textContent = state.charList.length;
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (state.charList.length === 0) {
+        container.innerHTML = '<div class="text-slate-400 text-xs text-center py-2">目前無生字</div>';
+        return;
+      }
+
+      state.charList.forEach((item, idx) => {
+        const polyList = POLYPHONE_DICT[item.char] || [];
+        let polyButtonsHtml = '';
+        if (polyList.length > 0) {
+          polyButtonsHtml = `
+            <div class="flex items-center gap-1 mt-1 flex-wrap">
+              <span class="text-[10px] text-slate-400">快速切換讀音：</span>
+              ${polyList.map(py => `
+                <button type="button" data-idx="${idx}" data-pinyin="${py}" class="btn-quick-pinyin px-1.5 py-0.5 rounded text-[10px] border transition ${item.pinyin === py ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}">
+                  ${py}
+                </button>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        const row = document.createElement('div');
+        row.className = 'p-2 rounded bg-slate-50 border border-slate-200';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded bg-white border border-slate-300 font-chinese text-base font-bold flex items-center justify-center text-slate-900 shadow-2xs">
+              ${item.char}
+            </div>
+            <div class="flex-1 grid grid-cols-2 gap-2">
+              <div>
+                <span class="text-[10px] text-slate-500 block">注音（可自由手動修改）</span>
+                <input type="text" data-idx="${idx}" class="input-char-pinyin w-full border border-slate-300 rounded px-1.5 py-0.5 text-xs font-chinese focus:ring-1 focus:ring-sky-500" value="${item.pinyin}" placeholder="如 ㄐㄩㄢˋ">
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-500 block">常用詞語</span>
+                <input type="text" data-idx="${idx}" class="input-char-word w-full border border-slate-300 rounded px-1.5 py-0.5 text-xs focus:ring-1 focus:ring-sky-500" value="${item.word || ''}" placeholder="如 考卷">
+              </div>
+            </div>
+          </div>
+          ${polyButtonsHtml}
+        `;
+        container.appendChild(row);
+      });
+
+      container.querySelectorAll('.input-char-pinyin').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+          state.charList[idx].pinyin = e.target.value;
+          renderQuestionsSettings();
+          renderWorksheetPreview();
+        });
+      });
+
+      container.querySelectorAll('.btn-quick-pinyin').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-idx'), 10);
+          const py = btn.getAttribute('data-pinyin');
+          state.charList[idx].pinyin = py;
+          updateCharDetailsUI();
+          renderQuestionsSettings();
+          renderWorksheetPreview();
+          showToast(`已切換「${state.charList[idx].char}」讀音為 ${py}`);
+        });
+      });
+
+      container.querySelectorAll('.input-char-word').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+          state.charList[idx].word = e.target.value;
+          renderQuestionsSettings();
+          renderWorksheetPreview();
+        });
+      });
+    }
+
+    function renderQuestionsSettings() {
+      syncQuestionsWithCharList();
+
+      const container = document.getElementById('questionsContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (state.questions.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5 text-slate-400 border border-dashed rounded-lg text-xs">
+            尚無填空題目，點擊下方「新增題目」
+          </div>
+        `;
+        return;
+      }
+
+      state.questions.forEach((q, qIndex) => {
+        const qCard = document.createElement('div');
+        qCard.className = 'border border-slate-200 rounded-lg p-3 bg-slate-50/60 relative space-y-2.5 text-xs';
+        
+        const uniqueChars = Array.from(new Set(state.charList.map(c => c.char)));
+
+        let charChipsHtml = '';
+        if (uniqueChars.length === 0) {
+          charChipsHtml = '<span class="text-slate-400">請先在上方輸入生字</span>';
+        } else {
+          charChipsHtml = uniqueChars.map(c => {
+            const isChecked = q.chars.includes(c);
+            return `
+              <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer select-none transition text-[11px] ${isChecked ? 'bg-sky-600 text-white font-medium' : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100'}">
+                <input type="checkbox" data-qid="${q.id}" data-char="${c}" class="sr-only chk-question-char" ${isChecked ? 'checked' : ''}>
+                <span class="font-chinese">${c}</span>
+              </label>
+            `;
+          }).join('');
+        }
+
+        const selectedCount = q.chars ? q.chars.length : 0;
+
+        let zhuyinHintsHtml = '';
+        if (selectedCount > 0) {
+          const hintChips = q.chars.map(c => {
+            const isHint = Array.isArray(q.zhuyinHints) && q.zhuyinHints.includes(c);
+            const currentPinyin = getCharCurrentPinyin(c);
+            return `
+              <label class="inline-flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer select-none border transition text-[11px] ${isHint ? 'bg-amber-50 border-amber-400 text-amber-900 font-medium' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                <input type="checkbox" data-qid="${q.id}" data-char="${c}" class="chk-hint-zhuyin rounded text-amber-600 focus:ring-0" ${isHint ? 'checked' : ''}>
+                <span class="font-chinese font-bold">${c}</span>
+                <span class="text-[10px] text-amber-700 font-chinese">（${currentPinyin || '無注音'}）</span>
+              </label>
+            `;
+          }).join('');
+
+          zhuyinHintsHtml = `
+            <div class="p-2 bg-amber-50/50 rounded-lg border border-amber-200/70 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-medium text-amber-900 flex items-center gap-1">
+                  <i data-lucide="volume-2" class="w-3.5 h-3.5 text-amber-600"></i>
+                  提供注音線索（保證直式注音排版）：
+                </span>
+                <span class="text-[10px] text-amber-700">已選 ${q.zhuyinHints ? q.zhuyinHints.length : 0} 字</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5 pt-0.5">
+                ${hintChips}
+              </div>
+            </div>
+          `;
+        }
+
+        qCard.innerHTML = `
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-200">
+            <div class="flex items-center gap-1.5 font-bold text-slate-700">
+              <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[11px]">${qIndex + 1}</span>
+              <span>第 ${qIndex + 1} 題</span>
+              <span class="text-[10px] font-normal px-1.5 py-0.2 rounded bg-sky-100 text-sky-800">已勾選 ${selectedCount} 字（需留空 ${selectedCount} 格）</span>
+            </div>
+            <button type="button" data-qid="${q.id}" class="btn-delete-question text-slate-400 hover:text-rose-500 p-1 rounded transition" title="刪除本題">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div>
+            <span class="text-[11px] text-slate-500 block mb-1">勾選此題必須放入的目標漢字（選幾字即留空幾格）：</span>
+            <div class="flex flex-wrap gap-1">
+              ${charChipsHtml}
+            </div>
+          </div>
+
+          ${zhuyinHintsHtml}
+
+          <div class="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+            <div class="flex items-center gap-1.5 text-slate-700 font-medium text-[11px]">
+              <i data-lucide="ruler" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>本題指定文長（字數）：</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <input type="number" data-qid="${q.id}" class="input-target-length w-16 border border-slate-300 rounded px-2 py-0.5 text-xs text-center font-bold text-slate-800 focus:ring-1 focus:ring-sky-500 focus:outline-none" value="${q.targetLength || 45}" min="15" max="250" step="5">
+              <span class="text-slate-500 text-[11px]">字左右</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+              <label class="text-[11px] font-medium text-slate-700">短文句子（您可直接輸入完整文章）：</label>
+              <div class="flex items-center gap-1.5">
+                <button type="button" data-qid="${q.id}" class="btn-auto-blank-sentence text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded shadow-2xs font-medium flex items-center gap-1 transition" title="直接將句子裡的指定字轉為括號空格">
+                  <i data-lucide="scissors" class="w-3 h-3"></i>
+                  自動挖空指定字
+                </button>
+                <button type="button" data-qid="${q.id}" class="btn-gen-single-sentence text-[11px] text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1">
+                  <i data-lucide="sparkles" class="w-3 h-3 text-amber-500"></i> 依字數造句
+                </button>
+              </div>
+            </div>
+            <textarea data-qid="${q.id}" rows="3" class="question-text-input w-full border border-slate-300 rounded p-2 text-xs font-chinese tracking-wide leading-relaxed focus:ring-1 focus:ring-sky-500 focus:outline-none bg-white" placeholder="您可以直接貼上完整句子，然後點擊右上角「自動挖空指定字」">${q.text || ''}</textarea>
+            <p class="text-[10px] text-slate-500 mt-0.5">💡 提示：本題勾選了 ${selectedCount} 個字，題目內必須包含 ${selectedCount} 個留空格（若勾選注音線索，會以 <code>（　　[注音]）</code> 形式標示）。</p>
+          </div>
+        `;
+
+        container.appendChild(qCard);
+      });
+
+      if (window.lucide) lucide.createIcons();
+
+      container.querySelectorAll('.chk-question-char').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const qId = e.target.getAttribute('data-qid');
+          const char = e.target.getAttribute('data-char');
+          const question = state.questions.find(item => item.id === qId);
+          if (!question) return;
+
+          if (e.target.checked) {
+            if (!question.chars.includes(char)) question.chars.push(char);
+          } else {
+            question.chars = question.chars.filter(c => c !== char);
+            if (question.zhuyinHints) {
+              question.zhuyinHints = question.zhuyinHints.filter(c => c !== char);
+            }
+          }
+          renderQuestionsSettings();
+        });
+      });
+
+      container.querySelectorAll('.chk-hint-zhuyin').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const qId = e.target.getAttribute('data-qid');
+          const char = e.target.getAttribute('data-char');
+          const question = state.questions.find(item => item.id === qId);
+          if (!question) return;
+          if (!Array.isArray(question.zhuyinHints)) question.zhuyinHints = [];
+
+          if (e.target.checked) {
+            if (!question.zhuyinHints.includes(char)) question.zhuyinHints.push(char);
+          } else {
+            question.zhuyinHints = question.zhuyinHints.filter(c => c !== char);
+            const pinyin = getCharCurrentPinyin(char);
+            if (pinyin && question.text) {
+              const tokenWithPy = `[${pinyin}]`;
+              question.text = question.text.split(tokenWithPy).join('');
+            }
+          }
+          
+          applyZhuyinHintsToQuestionText(question);
+          renderQuestionsSettings();
+          renderWorksheetPreview();
+          showToast(`已${e.target.checked ? '開啟' : '關閉'}「${char}」的直式注音線索`);
+        });
+      });
+
+      container.querySelectorAll('.input-target-length').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const qId = e.target.getAttribute('data-qid');
+          const question = state.questions.find(item => item.id === qId);
+          if (question) {
+            question.targetLength = parseInt(e.target.value, 10) || 45;
+          }
+        });
+      });
+
+      container.querySelectorAll('.btn-auto-blank-sentence').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const qId = btn.getAttribute('data-qid');
+          const question = state.questions.find(item => item.id === qId);
+          if (!question) return;
+
+          if (!question.chars || question.chars.length === 0) {
+            showToast('請先勾選本題指定的漢字！');
+            return;
+          }
+
+          if (!question.text || question.text.trim().length === 0) {
+            showToast('請先在輸入框中輸入或貼上包含指定字的長句！');
+            return;
+          }
+
+          let processedText = question.text;
+          
+          question.chars.forEach(char => {
+            if (char && processedText.includes(char)) {
+              const shouldShowZhuyin = Array.isArray(question.zhuyinHints) && question.zhuyinHints.includes(char);
+              const pinyin = getCharCurrentPinyin(char);
+              const blankToken = (shouldShowZhuyin && pinyin) ? `（　　[${pinyin}]）` : '（　　）';
+              processedText = processedText.split(char).join(blankToken);
+            }
+          });
+
+          if (Array.isArray(question.zhuyinHints) && question.zhuyinHints.length > 0) {
+            question.zhuyinHints.forEach(c => {
+              const pinyin = getCharCurrentPinyin(c);
+              if (pinyin && !processedText.includes(`[${pinyin}]`)) {
+                processedText = processedText.replace(/（[\s　]*）/, `（　　[${pinyin}]）`);
+              }
+            });
+          }
+
+          question.text = processedText;
+          renderQuestionsSettings();
+          renderWorksheetPreview();
+          showToast(`已成功為 ${question.chars.length} 個生字挖空並套用直式注音線索！`);
+        });
+      });
+
+      container.querySelectorAll('.question-text-input').forEach(txt => {
+        txt.addEventListener('input', (e) => {
+          const qId = e.target.getAttribute('data-qid');
+          const question = state.questions.find(item => item.id === qId);
+          if (question) {
+            question.text = e.target.value;
+            renderWorksheetPreview();
+          }
+        });
+      });
+
+      container.querySelectorAll('.btn-delete-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const qId = btn.getAttribute('data-qid');
+          state.questions = state.questions.filter(item => item.id !== qId);
+          renderQuestionsSettings();
+          renderWorksheetPreview();
+          showToast('已刪除題目');
+        });
+      });
+
+      container.querySelectorAll('.btn-gen-single-sentence').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const qId = btn.getAttribute('data-qid');
+          const question = state.questions.find(item => item.id === qId);
+          if (!question || question.chars.length === 0) {
+            showToast('請先為本題勾選至少一個漢字');
+            return;
+          }
+          await generateSentenceForQuestion(question);
+        });
+      });
+    }
+
+    function renderSentencesDisplay() {
+      const container = document.getElementById('sentencesDisplayArea');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (state.questions.length === 0) {
+        container.innerHTML = '<p class="text-slate-400 font-sans text-xs">尚未建立填空題目。</p>';
+        return;
+      }
+
+      state.questions.forEach((q, idx) => {
+        const p = document.createElement('div');
+        p.className = 'sentence-item text-slate-900 font-chinese text-base leading-snug mb-2';
+
+        let formattedText = q.text || '';
+        
+        // 1. 處理帶注音線索的留空格：渲染為標準直式注音元件（所見即所得）
+        formattedText = formattedText.replace(/（[\s　]*\[?([ㄅ-ㄩ\u3105-\u3129ˊˇˋ˙\s]+)\]?[\s　]*）|\([\s　]*\[?([ㄅ-ㄩ\u3105-\u3129ˊˇˋ˙\s]+)\]?[\s　]*\)/g, (match, py1, py2) => {
+          const py = (py1 || py2 || '').trim();
+          if (!py) return '<span class="inline-block px-1 mx-0.5 font-sans tracking-widest text-slate-600 font-normal">（&nbsp;&nbsp;&nbsp;&nbsp;）</span>';
+
+          const imgObj = getZhuyinBlankImageDataUrl(py);
+          return `<img src="${imgObj.dataUrl}" width="${imgObj.width}" height="${imgObj.height}" class="inline-block align-middle -mt-1 mx-0.5 select-none" alt="（　${py}）">`;
+        });
+
+        // 2. 處理一般純留空格
+        formattedText = formattedText.replace(/（\s*）|\(\s*\)|（　*）/g, '<span class="inline-block px-1 mx-0.5 font-sans tracking-widest text-slate-600 font-normal">（&nbsp;&nbsp;&nbsp;&nbsp;）</span>');
+
+        p.innerHTML = `
+          <div class="flex items-start gap-1">
+            <span class="font-bold shrink-0">${idx + 1}.</span>
+            <div class="flex-1">${formattedText}</div>
+          </div>
+        `;
+        container.appendChild(p);
+      });
+    }
+
+    function renderHanziGrid() {
+      const container = document.getElementById('hanziGridArea');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const cols = parseInt(state.wordsPerRow, 10) || 8;
+      const practiceTimes = parseInt(state.practiceTimes, 10) || 2;
+
+      if (!state.charList || state.charList.length === 0) {
+        container.innerHTML = '<div class="text-slate-400 text-xs text-center py-4 border border-dashed rounded font-sans">請在左側輸入生字</div>';
+        return;
+      }
+
+      const rows = [];
+      for (let i = 0; i < state.charList.length; i += cols) {
+        rows.push(state.charList.slice(i, i + cols));
+      }
+
+      const tianziPct = (72 / cols).toFixed(3);
+      const zhuyinPct = (28 / cols).toFixed(3);
+
+      rows.forEach((rowWords) => {
+        const padded = [...rowWords];
+        while (padded.length < cols) padded.push({ char: '', pinyin: '', word: '' });
+
+        const table = document.createElement('table');
+        table.className = 'w-full border-collapse mb-1.5 border-[1.5px] border-slate-900 table-fixed bg-white select-none';
+        
+        let colgroupHtml = '<colgroup>';
+        for (let c = 0; c < cols; c++) {
+          colgroupHtml += `<col style="width:${tianziPct}%;">`;
+          colgroupHtml += `<col style="width:${zhuyinPct}%;">`;
+        }
+        colgroupHtml += '</colgroup>';
+
+        let headerCells = '';
+        padded.forEach((item, cIdx) => {
+          const isLastCol = (cIdx === cols - 1);
+          const rightBorderZhuyin = isLastCol ? '' : 'border-r-[1.5px] border-slate-900';
+
+          if (!item.char) {
+            headerCells += `
+              <td class="tianzi-box border-b-[1.5px] border-slate-900 p-0 text-center align-middle h-10 sm:h-11"></td>
+              <td class="zhuyin-box border-b-[1.5px] border-slate-900 ${rightBorderZhuyin} p-0 text-center align-middle h-10 sm:h-11"></td>
+            `;
+          } else {
+            let safePinyin = item.pinyin || '';
+            if (!safePinyin || /[\u4e00-\u9fa5]/.test(safePinyin)) {
+              safePinyin = COMMON_DICT[item.char]?.pinyin || '';
+            }
+            const parsed = parseZhuyinString(safePinyin);
+            const zhuyinHtml = `
+              <div class="zhuyin-text-container">
+                ${parsed.isLight ? '<span class="zhuyin-tone-light">˙</span>' : ''}
+                <div class="zhuyin-symbols">
+                  ${parsed.symbols.map(s => `<span>${s}</span>`).join('')}
+                </div>
+                ${!parsed.isLight && parsed.tone ? `<span class="zhuyin-tone">${parsed.tone}</span>` : ''}
+              </div>
+            `;
+            headerCells += `
+              <td class="tianzi-box border-b-[1.5px] border-slate-900 p-0 text-center align-middle font-chinese text-xl sm:text-2xl font-bold text-slate-900 h-10 sm:h-11">
+                ${item.char}
+              </td>
+              <td class="zhuyin-box border-b-[1.5px] border-slate-900 ${rightBorderZhuyin} p-0 text-center align-middle h-10 sm:h-11">
+                ${zhuyinHtml}
+              </td>
+            `;
+          }
+        });
+
+        let practiceRowsHtml = '';
+        for (let t = 0; t < practiceTimes; t++) {
+          const isLastRow = (t === practiceTimes - 1);
+          const bottomBorder = isLastRow ? '' : 'border-b-[1.5px] border-slate-900';
+          let pCells = '';
+          padded.forEach((_, cIdx) => {
+            const isLastCol = (cIdx === cols - 1);
+            const rightBorderZhuyin = isLastCol ? '' : 'border-r-[1.5px] border-slate-900';
+            pCells += `
+              <td class="tianzi-box ${bottomBorder} p-0 h-10 sm:h-11"></td>
+              <td class="zhuyin-box ${bottomBorder} ${rightBorderZhuyin} p-0 h-10 sm:h-11"></td>
+            `;
+          });
+          practiceRowsHtml += `<tr>${pCells}</tr>`;
+        }
+
+        table.innerHTML = `
+          ${colgroupHtml}
+          <tbody>
+            <tr>${headerCells}</tr>
+            ${practiceRowsHtml}
+          </tbody>
+        `;
+
+        container.appendChild(table);
+      });
+    }
+
+    function renderWorksheetPreview() {
+      const hTitle = document.getElementById('displayHeaderTitle');
+      if (hTitle) hTitle.textContent = state.mainTitle;
+      const s1Title = document.getElementById('displaySec1Title');
+      if (s1Title) s1Title.textContent = state.sec1Title;
+      const s2Title = document.getElementById('displaySec2Title');
+      if (s2Title) s2Title.textContent = state.sec2Title;
+
+      renderHanziGrid();
+      renderSentencesDisplay();
+    }
+
+    async function generateSentenceForQuestion(question) {
+      showToast('正在依指定字數與生字組織通順短文...');
+      
+      const targetWords = question.chars.map(c => {
+        const found = state.charList.find(item => item.char === c);
+        const w = (found && found.word) ? found.word : (COMMON_DICT[c]?.word || (c + '語'));
+        const pinyin = getCharCurrentPinyin(c);
+        const hasZhuyin = Array.isArray(question.zhuyinHints) && question.zhuyinHints.includes(c);
+        return { char: c, word: w, pinyin, hasZhuyin };
+      });
+
+      const targetLen = parseInt(question.targetLength, 10) || 45;
+      const generatedSentence = buildFallbackSentence(targetWords, targetLen);
+      question.text = generatedSentence;
+      renderQuestionsSettings();
+      renderWorksheetPreview();
+      showToast(`已依目標字數（約 ${targetLen} 字）全數生成！`);
+    }
+
+    function buildFallbackSentence(targetWords, targetLength = 45) {
+      if (!targetWords || targetWords.length === 0) return '請先勾選本題生字。';
+
+      const currentChars = targetWords.map(tw => tw.char);
+
+      const processedItems = targetWords.map(tw => {
+        let displayPhrase = tw.word || (tw.char + '語');
+        const blankToken = (tw.hasZhuyin && tw.pinyin) ? `（　　[${tw.pinyin}]）` : '（　　）';
+        if (displayPhrase.includes(tw.char)) {
+          displayPhrase = displayPhrase.replace(tw.char, blankToken);
+        } else {
+          displayPhrase = `${blankToken}${displayPhrase}`;
+        }
+        return { char: tw.char, blanked: displayPhrase, rawWord: tw.word };
+      });
+
+      const n = processedItems.length;
+
+      if (n === 1) {
+        if (targetLength <= 30) {
+          return `在今天的語文課上，老師特別指導大家認識${processedItems[0].blanked}的用法。`;
+        } else if (targetLength <= 55) {
+          return `今天第一節課的氣氛非常熱鬧，老師不僅詳細介紹了${processedItems[0].blanked}的用法，還請大家輪流上台練習造句，大家都聽得津津有味。`;
+        } else {
+          return `早晨微風徐徐吹進教室，同學們精神飽滿地坐在座位上。在今天的閱讀課中，老師特別帶領大家認識${processedItems[0].blanked}背後深厚的意義，並透過小組討論分享彼此的心得，讓大家都有滿滿的收穫。`;
+        }
+      }
+
+      if (n === 2) {
+        if (currentChars.includes('橡') && currentChars.includes('像') && Math.abs(targetLength - 55) < 20) {
+          const b1 = processedItems.find(p => p.char === '橡')?.blanked || '（　　）';
+          const b2 = processedItems.find(p => p.char === '像')?.blanked || '（　　）';
+          return `星期天，爸爸帶我去動物園。我看到一棵高大的${b1}樹，樹上有好多葉子。我拿起相機拍照，照片中的大樹看起來好${b2}真的一樣。`;
+        }
+        if (currentChars.includes('券') && currentChars.includes('卷') && targetLength <= 40) {
+          const bJuan = processedItems.find(p => p.char === '卷')?.blanked || '（　　）';
+          const bQuan = processedItems.find(p => p.char === '券')?.blanked || '（　　）';
+          return `他答應班上的學生，可以拿訂正完的考${bJuan}，來兌換電影${bQuan}。`;
+        }
+
+        if (targetLength <= 35) {
+          return `小明平時認真學習，不僅清楚理解${processedItems[0].blanked}，對於${processedItems[1].blanked}的練習也十分用心。`;
+        } else if (targetLength <= 55) {
+          return `星期天下午，我和同學相約在圖書館複習課業。我們一起整理有關${processedItems[0].blanked}的筆記，並互相考查${processedItems[1].blanked}的用法，整堂課下來學到了很多新知識。`;
+        } else {
+          return `陽光灑在充滿活力的校園裡，今天綜合活動課的主題十分精彩。老師在課堂一開始先向全班說明${processedItems[0].blanked}的由來，隨後請大家分組合作，運用課本上的${processedItems[1].blanked}完成了精彩的實作發表，獲得全班熱烈的掌聲。`;
+        }
+      }
+
+      if (n === 3) {
+        if (targetLength <= 40) {
+          return `在這次活動中，同學們先仔細觀察了${processedItems[0].blanked}，接著完成${processedItems[1].blanked}，最後整理好了${processedItems[2].blanked}。`;
+        } else if (targetLength <= 60) {
+          return `今天全班一起參加校園探索。出發前老師提醒我們要注重${processedItems[0].blanked}，參觀途中大家用心記錄下${processedItems[1].blanked}的特點，最後大家都順利完成了關於${processedItems[2].blanked}的學習報告。`;
+        } else {
+          return `涼爽的秋風吹過樹梢，今天班上舉辦了一場別開生面的學習闖關活動。同學們在第一關細心展示了${processedItems[0].blanked}的練習成果，接著在第二關相互討論${processedItems[1].blanked}的最佳解答，最後大家同心協力把${processedItems[2].blanked}的紀錄整理妥當，開心慶祝挑戰成功。`;
+        }
+      }
+
+      if (n >= 4) {
+        const part1 = processedItems.slice(0, 2).map(p => p.blanked).join('與');
+        const part2 = processedItems.slice(2, 4).map(p => p.blanked).join('和');
+        const remaining = processedItems.slice(4).map(p => p.blanked).join('、');
+        const extraClause = remaining ? `，同時也深入認識了${remaining}` : '';
+
+        if (targetLength <= 50) {
+          return `在今天的語文課上，我們一同探討了${part1}的用法，隨後又練習寫出${part2}${extraClause}，大家都收穫滿滿。`;
+        } else {
+          return `今天國語課的內容充實又有趣。老師在課堂前半段先帶領大家認識${part1}的核心含義，接著同學們透過小組合作，共同完成了關於${part2}${extraClause}的隨堂練習，大家都表現得非常優秀。`;
+        }
+      }
+
+      return '請勾選生字以產生題目。';
+    }
+
+    async function handleAutoGenerateAllSentences() {
+      if (state.questions.length === 0) {
+        const chars = state.charList.map(c => c.char);
+        const chunkSize = 2;
+        state.questions = [];
+        for (let i = 0; i < chars.length; i += chunkSize) {
+          const group = chars.slice(i, i + chunkSize);
+          state.questions.push({
+            id: 'q_' + Date.now() + '_' + i,
+            chars: group,
+            zhuyinHints: [],
+            customWords: {},
+            targetLength: 45,
+            text: ''
+          });
+        }
+      }
+
+      showToast('正在生成所有題目...');
+      for (const q of state.questions) {
+        if (q.chars.length === 0) {
+          q.chars = state.charList.slice(0, 2).map(c => c.char);
+        }
+        await generateSentenceForQuestion(q);
+      }
+      showToast('全部題目產生完成！');
+    }
+
+    function initData() {
+      state.mainTitle = '＿＿國小個學乙班國語生字習寫與語詞應用學習單';
+      state.sec1Title = '寫出生字和注音。';
+      state.sec2Title = '填入國字：';
+      state.practiceTimes = 2;
+      state.wordsPerRow = 8;
+      
+      const initialText = [
+        '性 個性 ㄒㄧㄥˋ',
+        '姓 姓名 ㄒㄧㄥˋ',
+        '塗 塗料 ㄊㄨˊ',
+        '寺 寺廟 ㄙˋ',
+        '詩 小詩 ㄕ',
+        '秀 秀麗 ㄒㄧㄡˋ',
+        '橡 橡樹 ㄒㄧㄤˋ',
+        '像 好像 ㄒㄧㄤˋ',
+        '券 入場券 ㄑㄩㄢˋ',
+        '卷 考卷 ㄐㄩㄢˋ',
+        '卷 考卷 ㄐㄩㄢˇ',
+        '卷 考卷 ㄑㄩㄢˊ',
+        '楚 清楚 ㄔㄨˇ',
+        '焚 焚燒 ㄈㄣˊ',
+        '禁 禁止 ㄐㄧㄣˋ',
+        '淋 淋雨 ㄌㄧㄣˊ'
+      ].join('\n');
+
+      state.charList = parseBatchInput(initialText);
+      state.questions = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+      
+      const inputChars = document.getElementById('inputCharacters');
+      if (inputChars) inputChars.value = initialText;
+      
+      const mainTitleInput = document.getElementById('wsMainTitle');
+      if (mainTitleInput) mainTitleInput.value = state.mainTitle;
+
+      updateCharDetailsUI();
+      renderQuestionsSettings();
+      renderWorksheetPreview();
+    }
+
+    function bindEventListeners() {
+      const timesRadios = document.querySelectorAll('input[name="practiceTimes"]');
+      timesRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          state.practiceTimes = parseInt(e.target.value, 10);
+          [1, 2, 3].forEach(val => {
+            const label = document.getElementById(`labelTimes${val}`);
+            const dot = label.querySelector('.dot');
+            if (val === state.practiceTimes) {
+              label.classList.add('border-sky-600', 'bg-sky-50', 'text-sky-900');
+              dot.classList.remove('bg-slate-300');
+              dot.classList.add('bg-sky-600');
+            } else {
+              label.classList.remove('border-sky-600', 'bg-sky-50', 'text-sky-900');
+              dot.classList.remove('bg-sky-600');
+              dot.classList.add('bg-slate-300');
+            }
+          });
+          renderWorksheetPreview();
+        });
+      });
+
+      document.getElementById('wordsPerRow').addEventListener('change', (e) => {
+        state.wordsPerRow = parseInt(e.target.value, 10);
+        renderWorksheetPreview();
+      });
+
+      document.getElementById('inputCharacters').addEventListener('input', (e) => {
+        const raw = e.target.value;
+        state.charList = parseBatchInput(raw);
+        syncQuestionsWithCharList();
+        updateCharDetailsUI();
+        renderQuestionsSettings();
+        renderWorksheetPreview();
+      });
+
+      document.getElementById('btnClearChars').addEventListener('click', () => {
+        document.getElementById('inputCharacters').value = '';
+        state.charList = [];
+        syncQuestionsWithCharList();
+        updateCharDetailsUI();
+        renderQuestionsSettings();
+        renderWorksheetPreview();
+      });
+
+      document.getElementById('btnQuickDemo').addEventListener('click', () => {
+        initData();
+        showToast('已還原為照片範例字與題目');
+      });
+
+      const toggleBtn = document.getElementById('toggleCharDetails');
+      const detailsContent = document.getElementById('charDetailsContent');
+      const arrowIcon = document.getElementById('arrowCharDetails');
+      toggleBtn.addEventListener('click', () => {
+        const isHidden = detailsContent.classList.contains('hidden');
+        if (isHidden) {
+          detailsContent.classList.remove('hidden');
+          arrowIcon.classList.add('rotate-180');
+        } else {
+          detailsContent.classList.add('hidden');
+          arrowIcon.classList.remove('rotate-180');
+        }
+      });
+
+      document.getElementById('btnAddQuestion').addEventListener('click', () => {
+        const newId = 'q_' + Date.now();
+        state.questions.push({
+          id: newId,
+          chars: state.charList.slice(0, 2).map(c => c.char),
+          zhuyinHints: [],
+          customWords: {},
+          targetLength: 45,
+          text: ''
+        });
+        renderQuestionsSettings();
+        renderWorksheetPreview();
+        showToast('已新增一道填空題');
+      });
+
+      document.getElementById('btnAutoGenerateSentences').addEventListener('click', () => {
+        handleAutoGenerateAllSentences();
+      });
+
+      document.getElementById('wsMainTitle').addEventListener('input', (e) => {
+        state.mainTitle = e.target.value;
+        renderWorksheetPreview();
+      });
+      document.getElementById('wsSection1Title').addEventListener('input', (e) => {
+        state.sec1Title = e.target.value;
+        renderWorksheetPreview();
+      });
+      document.getElementById('wsSection2Title').addEventListener('input', (e) => {
+        state.sec2Title = e.target.value;
+        renderWorksheetPreview();
+      });
+
+      document.getElementById('btnPrint').addEventListener('click', () => {
+        window.print();
+      });
+      document.getElementById('btnExportWord').addEventListener('click', () => {
+        exportToWordDocument();
+      });
+    }
+
+    window.onload = function() {
+      if (window.lucide) lucide.createIcons();
+      initData();
+      bindEventListeners();
+    };
+  </script>
+</body>
+</html>
+
